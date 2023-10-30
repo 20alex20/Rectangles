@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+private var numberVar = 0
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,15 +37,14 @@ class MainActivity : ComponentActivity() {
             when (resources.configuration.orientation) {
                 Configuration.ORIENTATION_PORTRAIT -> Greeting(3)
                 Configuration.ORIENTATION_LANDSCAPE -> Greeting(4)
+                else -> Greeting(3)
             }
         }
     }
 }
 
-private var numberVar = 0
-
 @Composable
-fun Greeting(n: Int, modifier: Modifier = Modifier) {
+fun Greeting(n: Int) {
     val number = remember { mutableStateOf(numberVar) }
     var index = 0
     val y_max = number.value / n + if(number.value % n != 0) 1 else 0
@@ -66,7 +67,7 @@ fun Greeting(n: Int, modifier: Modifier = Modifier) {
                     }
                 }
         }
-        Button(onClick = { numberVar++; number.value++ }, shape = RoundedCornerShape(0.dp), modifier = Modifier.height(75.dp).fillMaxWidth()) {
+        Button(onClick = { numberVar++; number.value = numberVar }, shape = RoundedCornerShape(0.dp), modifier = Modifier.height(75.dp).fillMaxWidth()) {
             Text(stringResource(R.string.add_rectangle), fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
         }
     }
