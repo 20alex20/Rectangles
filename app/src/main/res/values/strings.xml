@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Rectangles</string>
+    <string name="add_rectangle">Добавить прямоугольник</string>
+</resources>
