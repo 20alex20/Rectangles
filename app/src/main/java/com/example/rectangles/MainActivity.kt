@@ -17,8 +17,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,29 +30,40 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private var numberVar = 0
 
 class MainActivity : ComponentActivity() {
+    private var mutNum = mutableStateOf(0)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        savedInstanceState?.let {
+            mutNum = mutableStateOf(it.getInt("number"))
+        }
         setContent {
             when (resources.configuration.orientation) {
-                Configuration.ORIENTATION_PORTRAIT -> Greeting(3)
-                Configuration.ORIENTATION_LANDSCAPE -> Greeting(4)
-                else -> Greeting(3)
+                Configuration.ORIENTATION_PORTRAIT -> Greeting(3, mutNum)
+                Configuration.ORIENTATION_LANDSCAPE -> Greeting(4, mutNum)
+                else -> Greeting(3, mutNum)
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("number", mutNum.value)
     }
 }
 
 @Composable
-fun Greeting(n: Int) {
-    val number = remember { mutableStateOf(numberVar) }
+fun Greeting(n: Int, mutNum: MutableState<Int>) {
+    val number = remember { mutNum }
     var index = 0
     val y_max = number.value / n + if(number.value % n != 0) 1 else 0
     val height = LocalConfiguration.current.screenHeightDp.dp
     Column {
-        Column(modifier = Modifier.height(height - 75.dp).verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier
+            .height(height - 75.dp)
+            .verticalScroll(rememberScrollState())) {
             for (y in 1..y_max)
                 Row(modifier = Modifier) {
                     for (x in 1..(if (number.value % n == 0 || y != y_max) n else number.value % n)) {
@@ -67,7 +80,9 @@ fun Greeting(n: Int) {
                     }
                 }
         }
-        Button(onClick = { numberVar++; number.value = numberVar }, shape = RoundedCornerShape(0.dp), modifier = Modifier.height(75.dp).fillMaxWidth()) {
+        Button(onClick = { number.value++ }, shape = RoundedCornerShape(0.dp), modifier = Modifier
+            .height(75.dp)
+            .fillMaxWidth()) {
             Text(stringResource(R.string.add_rectangle), fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
         }
     }
