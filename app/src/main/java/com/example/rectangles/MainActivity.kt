@@ -41,6 +41,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.rectangles.request.RetrofitController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.example.rectangles.request.Result
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
@@ -88,16 +95,16 @@ fun Greeting(n: Int) {
 
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
-    //val retrofitController = RetrofitController("https://randomfox.ca/")
+    val retrofitController = RetrofitController("https://randomfox.ca/")
     LazyVerticalGrid(
         columns = GridCells.Adaptive(150.dp),
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(4.dp)
     ) {
         items(items = (1..100).toList()) {
-            val link = remember { mutableStateOf<String>("https://randomfox.ca/images/23.jpg") }
+            val link = remember { mutableStateOf<String>("") }
             FoxPhotoCard(link)
-            //getLink(retrofitController, link)
+            getLink(retrofitController, link)
         }
     }
 }
@@ -114,7 +121,7 @@ fun FoxPhotoCard(link: MutableState<String>, modifier: Modifier = Modifier) {
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         AsyncImage(
-            model = ImageRequest.Builder(context = LocalContext.current).data("https://randomfox.ca/images/12.jpg")
+            model = ImageRequest.Builder(context = LocalContext.current).data(link.value)
                 .crossfade(true).build(),
             error = painterResource(R.drawable.ic_broken_image),
             placeholder = painterResource(R.drawable.loading_img),
@@ -125,12 +132,15 @@ fun FoxPhotoCard(link: MutableState<String>, modifier: Modifier = Modifier) {
     }
 }
 
-/*fun getLink(retrofitController: RetrofitController, link: MutableState<String>) {
-    CoroutineScope (Dispatchers.Main).launch {
+fun getLink(retrofitController: RetrofitController, link: MutableState<String>) {
+    CoroutineScope(Dispatchers.IO + CoroutineName("link")).launch {
         val linkResult = retrofitController.requestLink()
+
         when (linkResult) {
             is Result.Ok -> {
-                link.value = linkResult.link.link
+                withContext(Dispatchers.Main) {
+                    link.value = linkResult.link.link
+                }
             }
             is Result.Error -> {
 
@@ -139,7 +149,7 @@ fun FoxPhotoCard(link: MutableState<String>, modifier: Modifier = Modifier) {
     }
 }
 
-// проверено
+/*// проверено
 @Composable
 fun LoadingScreen(modifier: Modifier = Modifier) {
     Image(
