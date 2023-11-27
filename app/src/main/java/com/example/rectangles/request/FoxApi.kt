@@ -1,10 +1,12 @@
 package com.example.rectangles.request
 
-import retrofit2.Response
-import retrofit2.http.GET
+import retrofit.Call
+import retrofit.Response
+import retrofit.http.GET
+import rx.Single
 
 
 interface FoxApi {
     @GET("/floof")
-    suspend fun link(): Response<Link>
+    suspend fun link(): Call<Link>
 }

@@ -47,6 +47,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.example.rectangles.request.Result
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 
@@ -96,6 +97,7 @@ fun Greeting(n: Int) {
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
     val retrofitController = RetrofitController("https://randomfox.ca/")
+    val links: MutableList<MutableState<String>> = mutableListOf()
     LazyVerticalGrid(
         columns = GridCells.Adaptive(150.dp),
         modifier = modifier.fillMaxWidth(),
@@ -104,9 +106,12 @@ fun MainScreen(modifier: Modifier = Modifier) {
         items(items = (1..10).toList()) {
             val link = remember { mutableStateOf<String>("") }
             FoxPhotoCard(link)
-            getLink(retrofitController, link)
+            links.add(link)
+
         }
     }
+    getLink(retrofitController, links)
+
 }
 
 // проверено
@@ -132,18 +137,23 @@ fun FoxPhotoCard(link: MutableState<String>, modifier: Modifier = Modifier) {
     }
 }
 
-fun getLink(retrofitController: RetrofitController, link: MutableState<String>) {
-    CoroutineScope(Dispatchers.IO + CoroutineName("link")).launch {
-        val linkResult = retrofitController.requestLink()
+fun getLink(retrofitController: RetrofitController, links: MutableList<MutableState<String>>) {
+    runBlocking {
+        for (i in (1..1)) {
+            launch {
+                val linkResult = retrofitController.requestLink()
 
-        when (linkResult) {
-            is Result.Ok -> {
-                withContext(Dispatchers.Main) {
-                    link.value = linkResult.link.link
+                when (linkResult) {
+                    is Result.Ok -> {
+                        withContext(Dispatchers.Main) {
+                            links[i].value = linkResult.link.link
+                        }
+                    }
+
+                    is Result.Error -> {
+
+                    }
                 }
-            }
-            is Result.Error -> {
-
             }
         }
     }
