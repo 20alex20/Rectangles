@@ -5,7 +5,9 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
@@ -14,9 +16,12 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.material3.Text
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,25 +60,27 @@ import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
-    @SuppressLint("CoroutineCreationDuringComposition")
+    @OptIn(ExperimentalFoundationApi::class)
+    @SuppressLint("CoroutineCreationDuringComposition") // ?
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            for (i in 1..100) {
-                links.add(remember { mutableStateOf("") })
-            }
-
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(150.dp),
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(4.dp)
-            ) {
-                items(items = links) {link ->
-                    request(link, okHttpController)
-                    FoxPhotoCard(link, okHttpController)
+            LazyVerticalStaggeredGrid(
+                modifier = Modifier,
+                columns = StaggeredGridCells.Adaptive(150.dp),
+                verticalItemSpacing = 4.dp,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                content = {
+                    items(count = 10000, itemContent = { index ->
+                        while (links.size <= index) {
+                            links.add(remember { mutableStateOf("") })
+                        }
+                        request(links[index], okHttpController)
+                        FoxPhotoCard(links[index], okHttpController)
+                    })
                 }
-            }
+            )
         }
     }
 
@@ -95,7 +102,7 @@ fun request(link: MutableState<String>, okHttpController: OkHttpController) {
                         link.value = linkResult.link.link
                     }
                 }
-                is Result.Error -> {
+                is Result.Error -> { // ?
 
                 }
             }
@@ -108,12 +115,8 @@ fun request(link: MutableState<String>, okHttpController: OkHttpController) {
 @Composable
 fun FoxPhotoCard(link: MutableState<String>, okHttpController: OkHttpController, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier
-            .padding(4.dp)
-            .fillMaxWidth()
-            .aspectRatio(1.5f),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        modifier = modifier,
+        shape = RoundedCornerShape(0.dp),
         onClick = {
             request(link, okHttpController)
         }
