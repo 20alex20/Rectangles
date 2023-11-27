@@ -66,6 +66,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+            savedInstanceState?.let {
+                it.getStringArray("links")!!.forEach { link ->
+                    links.add(remember { mutableStateOf(link) })
+                }
+            }
+
             LazyVerticalStaggeredGrid(
                 modifier = Modifier,
                 columns = StaggeredGridCells.Adaptive(150.dp),
@@ -90,6 +96,11 @@ class MainActivity : ComponentActivity() {
         OkHttpController("https://randomfox.ca")
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putStringArray("links", links.map { it.value }.toTypedArray())
+        links.clear()
+    }
 }
 
 fun request(link: MutableState<String>, okHttpController: OkHttpController) {
