@@ -101,7 +101,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(4.dp)
     ) {
-        items(items = (1..100).toList()) {
+        items(items = (1..10).toList()) {
             val link = remember { mutableStateOf<String>("") }
             FoxPhotoCard(link)
             getLink(retrofitController, link)
