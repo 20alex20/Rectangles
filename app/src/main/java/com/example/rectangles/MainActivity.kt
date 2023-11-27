@@ -96,14 +96,9 @@ fun request(link: MutableState<String>, okHttpController: OkHttpController) {
     if (link.value == "") {
         CoroutineScope(Dispatchers.IO + CoroutineExceptionHandler { _, e -> println(e) }).launch {
             val linkResult = okHttpController.requestLink()
-            when (linkResult) {
-                is Result.Ok -> {
-                    withContext(Dispatchers.Main) {
-                        link.value = linkResult.link.link
-                    }
-                }
-                is Result.Error -> { // ?
-
+            if (linkResult is Result.Ok) {
+                withContext(Dispatchers.Main) {
+                    link.value = linkResult.link.link
                 }
             }
         }
