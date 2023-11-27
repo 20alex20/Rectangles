@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -69,18 +70,8 @@ class MainActivity : ComponentActivity() {
                 contentPadding = PaddingValues(4.dp)
             ) {
                 items(items = links) {link ->
-                    if (link.value == "") {
-                        CoroutineScope(Dispatchers.IO + exceptionHandler).launch {
-                            val linkResult = okHttpController.requestLink()
-                            if (linkResult is Result.Ok) {
-                                withContext(Dispatchers.Main) {
-                                    link.value = linkResult.link.link
-                                }
-                            }
-                        }
-                    }
-
-                    FoxPhotoCard(link)
+                    request(link, okHttpController)
+                    FoxPhotoCard(link, okHttpController)
                 }
             }
         }
@@ -92,22 +83,40 @@ class MainActivity : ComponentActivity() {
         OkHttpController("https://randomfox.ca")
     }
 
-    private val exceptionHandler = CoroutineExceptionHandler { _, e ->
+}
 
+fun request(link: MutableState<String>, okHttpController: OkHttpController) {
+    if (link.value == "") {
+        CoroutineScope(Dispatchers.IO).launch {
+            val linkResult = okHttpController.requestLink()
+            when (linkResult) {
+                is Result.Ok -> {
+                    withContext(Dispatchers.Main) {
+                        link.value = linkResult.link.link
+                    }
+                }
+                is Result.Error -> {
+
+                }
+            }
+        }
     }
 }
 
-
 // проверено
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FoxPhotoCard(link: MutableState<String>, modifier: Modifier = Modifier) {
+fun FoxPhotoCard(link: MutableState<String>, okHttpController: OkHttpController, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .padding(4.dp)
             .fillMaxWidth()
             .aspectRatio(1.5f),
         shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        onClick = {
+            request(link, okHttpController)
+        }
     ) {
         AsyncImage(
             model = ImageRequest.Builder(context = LocalContext.current).data(link.value)
@@ -119,10 +128,6 @@ fun FoxPhotoCard(link: MutableState<String>, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         )
     }
-}
-
-fun getLink(okHttpController: OkHttpController, links: MutableList<MutableState<String>>) {
-
 }
 
 /*// проверено
