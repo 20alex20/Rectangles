@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
 
 fun request(link: MutableState<String>, okHttpController: OkHttpController) {
     if (link.value == "") {
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.IO + CoroutineExceptionHandler { _, e -> println(e) }).launch {
             val linkResult = okHttpController.requestLink()
             when (linkResult) {
                 is Result.Ok -> {
