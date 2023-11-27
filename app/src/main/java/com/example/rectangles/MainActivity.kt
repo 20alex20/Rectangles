@@ -41,11 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.rectangles.request.RetrofitController
+import com.example.rectangles.request.OkHttpController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.example.rectangles.request.Result
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -54,65 +55,46 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
         setContent {
-            MainScreen()
-        }
-    }
-}
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(150.dp),
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(4.dp)
+            ) {
+                items(items = (1..100).toList()) {
+                    val link = remember { mutableStateOf<String>("") }
 
-@Composable
-fun Greeting(n: Int) {
-    val number = remember { mutableStateOf<Int>(0) }
-    var index = 0
-    val y_max = number.value / n + if(number.value % n != 0) 1 else 0
-    val height = LocalConfiguration.current.screenHeightDp.dp
-    Column {
-        Column(modifier = Modifier
-            .height(height - 75.dp)
-            .verticalScroll(rememberScrollState())) {
-            for (y in 1..y_max)
-                Row(modifier = Modifier) {
-                    for (x in 1..(if (number.value % n == 0 || y != y_max) n else number.value % n)) {
-                        Box(
-                            modifier = Modifier
-                                .background(if (index % 2 == 0) Color.Red else Color.Blue)
-                                .padding(vertical = 15.dp)
-                                .fillMaxWidth(1f / (n + 1 - x)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("$index", fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                    CoroutineScope(Dispatchers.IO + exceptionHandler).launch {
+                        val linkResult = okHttpController.requestLink()
+                        when (linkResult) {
+                            is Result.Ok -> {
+                                withContext(Dispatchers.Main) {
+                                    link.value = linkResult.link.link
+                                }
+                            }
+                            is Result.Error -> {
+
+                            }
                         }
-                        index += 1
                     }
+
+                    FoxPhotoCard(link)
                 }
+            }
         }
-        Button(onClick = { number.value++ }, shape = RoundedCornerShape(0.dp), modifier = Modifier
-            .height(75.dp)
-            .fillMaxWidth()) {
-            Text(stringResource(R.string.add_rectangle), fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
-        }
+    }
+
+    private val okHttpController by lazy {
+        OkHttpController("https://randomfox.ca")
+    }
+
+    private val exceptionHandler = CoroutineExceptionHandler { _, e ->
+
     }
 }
 
-@Composable
-fun MainScreen(modifier: Modifier = Modifier) {
-    val retrofitController = RetrofitController("https://randomfox.ca/")
-    val links: MutableList<MutableState<String>> = mutableListOf()
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(150.dp),
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(4.dp)
-    ) {
-        items(items = (1..10).toList()) {
-            val link = remember { mutableStateOf<String>("") }
-            FoxPhotoCard(link)
-            links.add(link)
-
-        }
-    }
-    getLink(retrofitController, links)
-
-}
 
 // проверено
 @Composable
@@ -137,26 +119,8 @@ fun FoxPhotoCard(link: MutableState<String>, modifier: Modifier = Modifier) {
     }
 }
 
-fun getLink(retrofitController: RetrofitController, links: MutableList<MutableState<String>>) {
-    runBlocking {
-        for (i in (1..1)) {
-            launch {
-                val linkResult = retrofitController.requestLink()
+fun getLink(okHttpController: OkHttpController, links: MutableList<MutableState<String>>) {
 
-                when (linkResult) {
-                    is Result.Ok -> {
-                        withContext(Dispatchers.Main) {
-                            links[i].value = linkResult.link.link
-                        }
-                    }
-
-                    is Result.Error -> {
-
-                    }
-                }
-            }
-        }
-    }
 }
 
 /*// проверено
