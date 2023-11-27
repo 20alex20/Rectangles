@@ -1,7 +1,5 @@
-package com.example.rectangles.request
+package com.example.rectangles.network
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 
 
@@ -16,10 +14,5 @@ sealed interface Result {
 
 data class Link(
     @SerializedName("image") val link: String,
-    @SerializedName("link") val notused: String,
+    @SerializedName("link") val notUsed: String,
 )
-
-val gsonWithDate: Gson
-    get() = GsonBuilder()
-        .setDateFormat("yyyy-HM-dd HH:mm:ss")
-        .create()
