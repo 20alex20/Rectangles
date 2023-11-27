@@ -1,5 +1,6 @@
 package com.example.rectangles
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -53,29 +54,28 @@ import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
+    @SuppressLint("CoroutineCreationDuringComposition")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         setContent {
+            for (i in 1..100) {
+                links.add(remember { mutableStateOf("") })
+            }
+
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(150.dp),
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(4.dp)
             ) {
-                items(items = (1..100).toList()) {
-                    val link = remember { mutableStateOf<String>("") }
-
-                    CoroutineScope(Dispatchers.IO + exceptionHandler).launch {
-                        val linkResult = okHttpController.requestLink()
-                        when (linkResult) {
-                            is Result.Ok -> {
+                items(items = links) {link ->
+                    if (link.value == "") {
+                        CoroutineScope(Dispatchers.IO + exceptionHandler).launch {
+                            val linkResult = okHttpController.requestLink()
+                            if (linkResult is Result.Ok) {
                                 withContext(Dispatchers.Main) {
                                     link.value = linkResult.link.link
                                 }
-                            }
-                            is Result.Error -> {
-
                             }
                         }
                     }
@@ -85,6 +85,8 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private val links: MutableList<MutableState<String>> = mutableListOf()
 
     private val okHttpController by lazy {
         OkHttpController("https://randomfox.ca")
