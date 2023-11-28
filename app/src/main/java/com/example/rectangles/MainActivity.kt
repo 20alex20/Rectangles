@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
                 verticalItemSpacing = 4.dp,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 content = {
-                    items(count = 10000, itemContent = { index ->
+                    items(count = R.integer.limit, itemContent = { index ->
                         while (links.size <= index) {
                             links.add(remember { mutableStateOf("") })
                         }
