@@ -1,5 +1,6 @@
 package com.example.rectangles
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startActivity
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.rectangles.network.OkHttpController
@@ -50,7 +53,7 @@ class MainActivity : ComponentActivity() {
                             links.add(remember { mutableStateOf("") })
                         }
                         request(links[index], okHttpController)
-                        FoxPhotoCard(links[index], okHttpController)
+                        FoxPhotoCard(links[index], okHttpController, ::start)
                     })
                 }
             )
@@ -68,16 +71,22 @@ class MainActivity : ComponentActivity() {
         outState.putStringArray("links", links.map { it.value }.toTypedArray())
         links.clear()
     }
+
+    fun start(link: String) {
+        val intent = Intent(this, SmallActivity::class.java)
+        intent.putExtra("link", link)
+        startActivity(intent)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FoxPhotoCard(link: MutableState<String>, okHttpController: OkHttpController, modifier: Modifier = Modifier) {
+fun FoxPhotoCard(link: MutableState<String>, okHttpController: OkHttpController, start: (String) -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(0.dp),
         onClick = {
-            request(link, okHttpController)
+            start(link.value)
         }
     ) {
         AsyncImage(
