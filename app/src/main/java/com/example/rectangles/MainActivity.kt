@@ -1,105 +1,93 @@
 package com.example.rectangles
 
-import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Text
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.rectangles.network.OkHttpController
+import com.example.rectangles.request.request
 
 
 class MainActivity : ComponentActivity() {
-    private var mutNum = mutableStateOf(0)
-
+    @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        savedInstanceState?.let {
-            mutNum = mutableStateOf(it.getInt("number"))
-        }
+
         setContent {
-            when (resources.configuration.orientation) {
-                Configuration.ORIENTATION_PORTRAIT -> Greeting(3, mutNum)
-                Configuration.ORIENTATION_LANDSCAPE -> Greeting(4, mutNum)
-                else -> Greeting(3, mutNum)
+            savedInstanceState?.let {
+                it.getStringArray("links")!!.forEach { link ->
+                    links.add(remember { mutableStateOf(link) })
+                }
             }
+
+            LazyVerticalStaggeredGrid(
+                modifier = Modifier,
+                columns = StaggeredGridCells.Adaptive(150.dp),
+                verticalItemSpacing = 4.dp,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                content = {
+                    items(count = R.integer.limit, itemContent = { index ->
+                        while (links.size <= index) {
+                            links.add(remember { mutableStateOf("") })
+                        }
+                        request(links[index], okHttpController)
+                        FoxPhotoCard(links[index], okHttpController)
+                    })
+                }
+            )
         }
+    }
+
+    private val links: MutableList<MutableState<String>> = mutableListOf()
+
+    private val okHttpController by lazy {
+        OkHttpController("https://randomfox.ca")
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt("number", mutNum.value)
+        outState.putStringArray("links", links.map { it.value }.toTypedArray())
+        links.clear()
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Greeting(n: Int, mutNum: MutableState<Int>) {
-    val number = remember { mutNum }
-
-    var list: MutableList<Int> = ArrayList()
-    for (i in 0 until n) {
-        list.add(i)
-    }
-
-    val q = remember { mutableStateOf(-1) }
-    val y_max = number.value / n + if(number.value % n != 0) 1 else 0
-    val height = LocalConfiguration.current.screenHeightDp.dp
-    Column {
-        LazyColumn(modifier = Modifier
-            .height(height - 75.dp)) {
-            itemsIndexed(list) { index, item ->
-                for (y in 1..y_max)
-                    Row(modifier = Modifier) {
-                        for (x in 1..(if (number.value % n == 0 || y != y_max) n else number.value % n)) {
-                            var color: Color
-                            if (q.value == index)
-                                color = Color.Green
-                            else if (index % 2 == 0)
-                                color = Color.Red
-                            else
-                                color = Color.Blue
-                            Box(
-                                modifier = Modifier
-                                    .background(color)
-                                    .padding(vertical = 15.dp)
-                                    .fillMaxWidth(1f / (n + 1 - x)).clickable { q.value = index },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("$index", fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    }
-            }
-
+fun FoxPhotoCard(link: MutableState<String>, okHttpController: OkHttpController, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(0.dp),
+        onClick = {
+            request(link, okHttpController)
         }
-        Button(onClick = { number.value++ }, shape = RoundedCornerShape(0.dp), modifier = Modifier
-            .height(75.dp)
-            .fillMaxWidth()) {
-            Text(stringResource(R.string.add_rectangle), fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
-        }
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context = LocalContext.current).data(link.value)
+                .crossfade(true).build(),
+            error = painterResource(R.drawable.ic_broken_image),
+            placeholder = painterResource(R.drawable.loading_img),
+            contentDescription = stringResource(R.string.fox_photo),
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
